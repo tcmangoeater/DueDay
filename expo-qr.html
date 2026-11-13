@@ -3,23 +3,24 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>DueDay Expo Go QR code</title>
+    <title>DueDay Expo QR code</title>
     <style>
       :root { color-scheme: light; font-family: Arial, sans-serif; }
       body { align-items: center; background: #f7f8fc; color: #1e2440; display: flex; justify-content: center; min-height: 100vh; margin: 0; }
-      main { background: white; border: 1px solid #e5e7f0; border-radius: 24px; box-shadow: 0 12px 32px #26315b18; max-width: 440px; padding: 32px; text-align: center; }
-      h1 { font-size: 28px; margin: 0 0 10px; }
+      main { background: white; border: 1px solid #e5e7f0; border-radius: 24px; box-shadow: 0 16px 40px rgba(38, 49, 91, .12); max-width: 560px; padding: 28px; text-align: center; }
+      h1 { margin: 0 0 10px; }
       p { color: #626a80; line-height: 1.5; }
-      img { display: block; height: 360px; margin: 24px auto; width: 360px; }
-      code { background: #f0efff; border-radius: 6px; color: #4a43c9; padding: 4px 6px; }
+      img { display: block; height: min(76vw, 420px); margin: 24px auto; width: min(76vw, 420px); }
+      code { background: #f0efff; border-radius: 8px; color: #4b44c7; display: inline-block; font-size: 16px; padding: 9px 12px; }
     </style>
   </head>
   <body>
     <main>
       <h1>Open DueDay in Expo Go</h1>
-      <p>In Expo Go, scan this QR code while your phone and computer are on the same Wi-Fi.</p>
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=360x360&amp;data=exp%3A%2F%2F192.168.4.46%3A8081" alt="Expo Go QR code for DueDay" />
-      <p>Or open <code>exp://192.168.4.46:8081</code> in Expo Go.</p>
+      <p>Scan this QR code with Expo Go while your phone and computer are on the same Wi-Fi.</p>
+      <img src="https://quickchart.io/qr?size=600&amp;text=exp%3A%2F%2F192.168.4.46%3A8081" alt="QR code for DueDay Expo Go" />
+      <p>Or open this link in Expo Go:</p>
+      <code>exp://192.168.4.46:8081</code>
     </main>
   </body>
 </html>
