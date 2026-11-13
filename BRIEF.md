@@ -1,27 +1,47 @@
 # Project brief: DueDay
+
 ## The competition
 - I’m entering the Presidential SI Challenge (Standard Track), a national K–12 competition. My age group: Middle school (grades 6–8)
 - Judges score only a written entry (a PDF of up to 10 pages) and a video of up to 4 minutes. They reward a clear understanding of the problem and a sensible use of AI.
 - My deadlines: Registration and project submission, registered by 12/18, 5:00 pm Eastern Time and challenge completed by 12/23, 5:00 pm Eastern Time.
+
 ## The problem
 - People in school struggle with remembering what work is due because they forget to do it.
 - Impact area: School and learning
 - Why it matters (impact): Students would get reminded when something's due to not have it missing.
-- Evidence it’s real: More than 70% of college students procrastinate, and 20% do it consistently. https://news.osu.edu/how-college-students-can-avoid-procrastinating-with-online-work/ 
-- What people told me: P1: "I have 5 assignments missing because I forgot to do them at home." 
-P2: "I always do my work later, but end up forgetting to do them." 
-## My solution 
-- My AI’s job: My AI helps by reminding students when their work is due, which works better than teachers telling students because some students don't pay attention. 
-- Tools that already exist, and how mine is different: Google classroom, but if teachers don't upload work or if you don't check, you don't get reminded. Canvas, but it costs payment to use. 
-- Safety plan: Risk: AI gives wrong answer. 
-Plan :Show where the date came from, such as “entered by you” or “from your school system.” Ask the student to confirm uncertain dates with the teacher or official school website. Add a “Report incorrect information” button. 
- 
-Risk: A reminder appears on a shared phone or is sent to the wrong parent, teacher, or student. 
-Plan: Use general lock-screen messages such as “You have schoolwork due soon.” Verify accounts and recipients. Let users mute notifications. Give parents, teachers, and students separate permissions, and do not share information with classmates. 
-## My AI’s instructions 
-- When it answers: The user types in an assignment and its due date. 
-- Its job: To remind the user when the due date is close or coming up. 
-- Who it talks to and how to sound: AI is talking to the user, and it should sound like a friendly reminder for their assignments. 
-- Facts it must use: What assignments and due dates there is fir the user. 
-- Rules it must follow: Reply to off topic things, get due dates wrong. 
-- How to answer: Saying the assignment and due date, about one sentence long. 
+- Evidence it’s real: More than 70% of college students procrastinate, and 20% do it consistently. https://news.osu.edu/how-college-students-can-avoid-procrastinating-with-online-work/
+- What people told me: P1: "I have 5 assignments missing because I forgot to do them at home."
+P2: "I always do my work later, but end up forgetting to do them."
+
+## My solution
+- My AI’s job: My AI helps by reminding students when their work is due, which works better than teachers telling students because some students don't pay attention.
+- Tools that already exist, and how mine is different: Google classroom, but if teachers don't upload work or if you don't check, you don't get reminded. Canvas, but it costs payment to use.
+- Safety plan: Risk: AI gives wrong answer.
+Plan: Show where the date came from, such as “entered by you” or “from your school system.” Ask the student to confirm uncertain dates with the teacher or official school website. Add a “Report incorrect information” button.
+
+Risk: A reminder appears on a shared phone or is sent to the wrong parent, teacher, or student.
+Plan: Use general lock-screen messages such as “You have schoolwork due soon.” Verify accounts and recipients. Let users mute notifications. Give parents, teachers, and students separate permissions, and do not share information with classmates.
+
+## My MVP features (build these first, in this order)
+1. The user can paste assignment text and let AI pull out the due date.
+2. The user can get a phone reminder before each assignment is due.
+3. The user can see all assignments in a list sorted by due date.
+4. The AI gives correct, safe answers to real questions.
+
+## Maybe later (not yet)
+- The user can see where each date came from, like entered by you.
+- The user can report an incorrect date the AI found.
+- The user can choose general lock-screen reminders that hide assignment names.
+- The user can mark an assignment done so its reminders stop.
+- The user can choose how early reminders come, like one day before.
+- The user can break a big project into smaller tasks with their own dates.
+- The user can mute reminders for a chosen time.
+- The user can see a weekly view of what is due.
+
+## My AI’s instructions
+- When it answers: The user types in an assignment and its due date.
+- Its job: To remind the user when the due date is close or coming up.
+- Who it talks to and how to sound: AI is talking to the user, and it should sound like a friendly reminder for their assignments.
+- Facts it must use: What assignments and due dates there is fir the user.
+- Rules it must follow: Reply to off topic things, get due dates wrong.
+- How to answer: Saying the assignment and due date, about one sentence long.
