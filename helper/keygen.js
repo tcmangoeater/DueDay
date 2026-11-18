@@ -14,6 +14,20 @@ function keyError(message, fix) {
 }
 
 function readEnvValue(name) {
+  const runtimeValue = typeof process !== 'undefined' ? process.env[name] : '';
+  const isVercel = typeof process !== 'undefined' && Boolean(process.env.VERCEL);
+  if (runtimeValue) {
+    const value = runtimeValue.trim().replace(/^(['"])(.*)\1$/, '$2');
+    if (value && value !== 'paste-here') return value;
+  }
+
+  if (isVercel) {
+    throw keyError(
+      name + ' is missing from Vercel environment variables.',
+      'Add ' + name + ' in Vercel Project Settings, then redeploy.'
+    );
+  }
+
   const envText = fs.readFileSync(path.join(projectRoot, '.env'), 'utf8');
   const line = envText
     .split(/\r?\n/)

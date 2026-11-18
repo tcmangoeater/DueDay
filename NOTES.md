@@ -8,6 +8,14 @@
 
 The helper listens on port 3001. The AI key comes from getKey() in helper/keygen.js; the app never receives the key or the MindDo token. Put the MindDo settings in `.env`. Expo LAN mode is required so the phone can reach the computer helper. If Expo is running through a tunnel, use LAN mode instead.
 
+## Web / Vercel
+
+- Web support uses the SDK 58-compatible react-dom, react-native-web, and @expo/metro-runtime packages. The Expo SDK stays 58.
+- On web, the full app is centered inside a phone-sized frame about 400 pixels wide. Expo Go keeps its original native layout.
+- For local web testing, start the helper, then run `.\node_modules\.bin\expo.cmd start --web`. The local web app uses the helper; a deployed web app uses the Vercel function in `api/ai.js`.
+- Vercel uses `vercel.json` to run `expo export -p web`, serve `dist`, and send app pages to the SPA.
+- In Vercel Project Settings, add `KEYGEN_URL` and `KEYGEN_TOKEN` as environment variables, then deploy from the GitHub repository. No other Vercel setting is required for this app. Do not add `OPENAI_API_KEY`.
+
 ## Done
 
 - Expo SDK 58 is kept because Expo Go on the phone supports SDK 58. The project uses `expo ~58.0.25`.

@@ -12,7 +12,6 @@ import {
   View,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-// eslint-disable-next-line import/no-named-as-default
 import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { StatusBar } from 'expo-status-bar';
@@ -29,6 +28,10 @@ Notifications.setNotificationHandler({
 });
 
 function getHelperUrl() {
+  if (Platform.OS === 'web') {
+    return process.env.NODE_ENV === 'production' ? '' : 'http://127.0.0.1:3001';
+  }
+
   const hostUri = Constants.expoConfig?.hostUri ?? '';
   const host = hostUri.split(':')[0];
   const isLanAddress = /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
@@ -79,17 +82,26 @@ function getReminderTime(dueDate) {
 
 async function callHelper(path, payload) {
   const helperUrl = getHelperUrl();
-  if (!helperUrl) throw new Error('helper-unreachable');
+  if (Platform.OS !== 'web' && !helperUrl) throw new Error(friendlyConnectionError());
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20000);
   try {
+    const isWebProduction = Platform.OS === 'web' && process.env.NODE_ENV === 'production';
+    const endpoint = isWebProduction ? '/api/ai' : path;
+    const requestPayload = isWebProduction
+      ? {
+          action: path.endsWith('/parse-assignment') ? 'parse-assignment' : 'question',
+          ...payload,
+        }
+      : payload;
+
     let response;
     try {
-      response = await fetch(`${helperUrl}${path}`, {
+      response = await fetch(`${helperUrl}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(requestPayload),
         signal: controller.signal,
       });
     } catch {
