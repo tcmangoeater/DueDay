@@ -6,7 +6,7 @@
 2. In a second terminal, run `.\\node_modules\\.bin\\expo.cmd start --lan` (this computer does not expose `npx`; the local Expo CLI is the SDK-matched equivalent).
 3. Scan the Expo Go QR code while the phone and computer use the same Wi-Fi.
 
-The helper listens on port 3001 and reads the OpenAI key only from `.env`. The app never contains the key. Expo LAN mode is required so the phone can reach the computer helper. If Expo is running through a tunnel, use LAN mode instead.
+The helper listens on port 3001. The AI key comes from getKey() in helper/keygen.js; the app never receives the key or the MindDo token. Put the MindDo settings in `.env`. Expo LAN mode is required so the phone can reach the computer helper. If Expo is running through a tunnel, use LAN mode instead.
 
 ## Done
 
@@ -18,7 +18,7 @@ The helper listens on port 3001 and reads the OpenAI key only from `.env`. The a
 - The AI helper sends the instructions from `BRIEF.md` with every OpenAI request and uses the `gpt-5.6-luna` model named here.
 - The app shows the date source, asks the student to confirm uncertain dates, and includes an incorrect-date report button.
 - `expo-notifications` local notifications work in Expo Go; remote push notifications are not part of this version.
-- The live helper path is wired, but the current OpenAI request returned HTTP 401; replace the local key in `.env` if the AI buttons show an error.
+- MindDo supplies a temporary AI key through getKey(), which keeps it cached until expiresAt and refreshes it once if OpenAI rejects it.
 - After each save point, push it to GitHub.
 
 ## Check the MVP features in 2 steps each

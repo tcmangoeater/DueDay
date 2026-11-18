@@ -2,26 +2,9 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { getKey, invalidateKey } = require('./keygen');
 
 const projectRoot = path.resolve(__dirname, '..');
-
-function readOpenAIKey() {
-  const envText = fs.readFileSync(path.join(projectRoot, '.env'), 'utf8');
-  const line = envText
-    .split(/\r?\n/)
-    .find((candidate) => /^\s*OPENAI_API_KEY\s*=/.test(candidate));
-
-  if (!line) {
-    throw new Error('OPENAI_API_KEY is missing from .env.');
-  }
-
-  const value = line.split('=', 2)[1].trim().replace(/^(['"])(.*)\1$/, '$2');
-  if (!value || value === 'paste-your-key-here') {
-    throw new Error('OPENAI_API_KEY is missing or still the placeholder.');
-  }
-
-  return value;
-}
 
 function readModel() {
   const notes = fs.readFileSync(path.join(projectRoot, 'NOTES.md'), 'utf8');
@@ -51,7 +34,7 @@ function readAiInstructions() {
 function localDateIso() {
   const now = new Date();
   const pad = (value) => String(value).padStart(2, '0');
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  return now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
 }
 
 function getResponseText(payload) {
@@ -70,18 +53,24 @@ function getResponseText(payload) {
 }
 
 function parseJsonObject(text) {
-  const withoutFence = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  const withoutFence = text.replace(/^\x60\x60\x60(?:json)?\s*/i, '').replace(/\s*\x60\x60\x60$/i, '').trim();
   const start = withoutFence.indexOf('{');
   const end = withoutFence.lastIndexOf('}');
   if (start < 0 || end <= start) throw new Error('OpenAI returned an unexpected format.');
   return JSON.parse(withoutFence.slice(start, end + 1));
 }
 
-async function askOpenAI(input) {
-  const response = await fetch('https://api.openai.com/v1/responses', {
+function aiError(message, fix) {
+  const error = new Error(message);
+  error.fix = fix;
+  return error;
+}
+
+async function fetchOpenAI(input, apiKey) {
+  return fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${readOpenAIKey()}`,
+      Authorization: 'Bearer ' + apiKey,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -95,9 +84,38 @@ async function askOpenAI(input) {
       ],
     }),
   });
+}
+
+async function askOpenAI(input) {
+  let apiKey = await getKey();
+  let response = await fetchOpenAI(input, apiKey);
+
+  // Refresh once when OpenAI rejects the cached key. There is no retry loop.
+  if (response.status === 401) {
+    invalidateKey();
+    apiKey = await getKey({ forceRefresh: true });
+    response = await fetchOpenAI(input, apiKey);
+  }
 
   if (!response.ok) {
-    throw new Error(`OpenAI request failed with status ${response.status}.`);
+    if (response.status === 401) {
+      throw aiError(
+        'OpenAI rejected the AI key supplied by MindDo.',
+        'Check the MindDo key service and its account permissions.'
+      );
+    }
+
+    if (response.status === 429) {
+      throw aiError(
+        'The AI service is busy right now.',
+        'Wait a little while and try again.'
+      );
+    }
+
+    throw aiError(
+      'The AI service could not answer.',
+      'Check the MindDo key service and try again.'
+    );
   }
 
   const payload = await response.json();
@@ -110,7 +128,7 @@ async function findDueDate(assignmentText) {
   const text = await askOpenAI([
     'The student pasted assignment details below.',
     'Extract the assignment title and a due date only when the pasted text clearly provides one.',
-    `Today in the computer local calendar is ${localDateIso()}. Use it only to resolve an explicit relative date such as “tomorrow” or “Friday”; never guess a missing or ambiguous date.`,
+    'Today in the computer local calendar is ' + localDateIso() + '. Use it only to resolve an explicit relative date such as “tomorrow” or “Friday”; never guess a missing or ambiguous date.',
     'Return JSON only in this exact shape:',
     '{"title":"short assignment title","dueDate":"YYYY-MM-DD or null","dateText":"the exact date words or empty string","confidence":"high, medium, or low"}',
     'If the date is unclear or absent, use dueDate null and confidence low.',

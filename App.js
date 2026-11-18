@@ -84,14 +84,28 @@ async function callHelper(path, payload) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20000);
   try {
-    const response = await fetch(`${helperUrl}${path}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
+    let response;
+    try {
+      response = await fetch(`${helperUrl}${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+    } catch {
+      throw new Error(friendlyConnectionError());
+    }
+
     const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(result.error || 'helper-error');
+    if (!response.ok) {
+      const serverError = result && result.error;
+      const message = serverError && typeof serverError.message === 'string'
+        ? serverError.message
+        : typeof serverError === 'string'
+          ? serverError
+          : friendlyConnectionError();
+      throw new Error(message);
+    }
     return result;
   } finally {
     clearTimeout(timeout);
@@ -197,8 +211,8 @@ export default function App() {
       setParsedDueDate(result.dueDate);
       setParsedConfidence(result.confidence || 'low');
       setNotice('Check the date before saving. Confirm uncertain dates with your teacher or school website.');
-    } catch {
-      setError(friendlyConnectionError());
+    } catch (error) {
+      setError(error.message || friendlyConnectionError());
     } finally {
       setThinking('');
     }
@@ -256,8 +270,8 @@ export default function App() {
         assignments: sortedAssignments,
       });
       setAnswer(result.answer || 'I do not have enough information from your saved assignments yet.');
-    } catch {
-      setError(friendlyConnectionError());
+    } catch (error) {
+      setError(error.message || friendlyConnectionError());
     } finally {
       setThinking('');
     }

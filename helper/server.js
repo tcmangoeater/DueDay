@@ -13,6 +13,12 @@ function sendJson(response, statusCode, payload) {
   response.end(JSON.stringify(payload));
 }
 
+function sendError(response, statusCode, message, fix) {
+  sendJson(response, statusCode, {
+    error: { message, fix },
+  });
+}
+
 function readBody(request) {
   return new Promise((resolve, reject) => {
     let body = '';
@@ -44,7 +50,7 @@ const server = http.createServer(async (request, response) => {
   }
 
   if (request.method !== 'POST' || !['/api/parse-assignment', '/api/question'].includes(requestUrl.pathname)) {
-    sendJson(response, 404, { error: 'Not found.' });
+    sendError(response, 404, 'That helper request was not found.', 'Check the app and helper versions.');
     return;
   }
 
@@ -54,7 +60,7 @@ const server = http.createServer(async (request, response) => {
     if (requestUrl.pathname === '/api/parse-assignment') {
       const assignmentText = getText(data, 'assignmentText', 10000);
       if (!assignmentText) {
-        sendJson(response, 400, { error: 'Paste an assignment and due date first.' });
+        sendError(response, 400, 'Paste an assignment and due date first.', 'Add assignment text before tapping the AI button.');
         return;
       }
 
@@ -66,17 +72,21 @@ const server = http.createServer(async (request, response) => {
     const question = getText(data, 'question', 3000);
     const assignments = Array.isArray(data.assignments) ? data.assignments.slice(0, 100) : [];
     if (!question) {
-      sendJson(response, 400, { error: 'Ask a question about your saved assignments.' });
+      sendError(response, 400, 'Ask a question about your saved assignments.', 'Type a question before tapping the AI button.');
       return;
     }
 
     const answer = await answerQuestion(question, assignments);
     sendJson(response, 200, { answer });
   } catch (error) {
-    console.error('AI request failed:', error.message);
-    sendJson(response, 502, {
-      error: 'The AI helper could not answer. Check the key and the helper.',
-    });
+    const message = error && typeof error.message === 'string'
+      ? error.message
+      : 'The AI helper could not answer.';
+    const fix = error && typeof error.fix === 'string'
+      ? error.fix
+      : 'Check the helper settings and try again.';
+    console.error('AI request fix:', fix);
+    sendError(response, 502, message, fix);
   }
 });
 server.listen(PORT, '0.0.0.0', () => {
