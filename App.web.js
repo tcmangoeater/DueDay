@@ -1,5 +1,5 @@
 import { StyleSheet, View } from 'react-native';
-import App from './App';
+import App from './AppContent';
 
 export default function WebApp() {
   return (
