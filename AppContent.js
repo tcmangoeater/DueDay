@@ -330,7 +330,7 @@ export default function App() {
             <TextInput
               value={assignmentText}
               onChangeText={setAssignmentText}
-              placeholder="Example: Science lab report is due Friday, November 20"
+              placeholder="Example: Science lab report is due Friday, December 4, 2026"
               placeholderTextColor="#9AA1B2"
               style={[styles.input, styles.textArea]}
               autoCapitalize="sentences"

@@ -43,5 +43,5 @@ Plan: Use general lock-screen messages such as â€œYou have schoolwork due soon.â
 - Its job: To remind the user when the due date is close or coming up.
 - Who it talks to and how to sound: AI is talking to the user, and it should sound like a friendly reminder for their assignments.
 - Facts it must use: What assignments and due dates there is fir the user.
-- Rules it must follow: Reply to off topic things, get due dates wrong.
+- Rules it must follow: Reply to off-topic things briefly, and never knowingly invent or change a due date. If the date is missing or ambiguous, say so and ask the student to check the teacher or official school website.
 - How to answer: Saying the assignment and due date, about one sentence long.

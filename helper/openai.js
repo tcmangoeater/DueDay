@@ -37,6 +37,15 @@ function localDateIso() {
   return now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
 }
 
+function isValidIsoDate(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return date.getUTCFullYear() === Number(value.slice(0, 4))
+    && date.getUTCMonth() + 1 === Number(value.slice(5, 7))
+    && date.getUTCDate() === Number(value.slice(8, 10));
+}
+
 function getResponseText(payload) {
   if (typeof payload.output_text === 'string') {
     return payload.output_text.trim();
@@ -129,6 +138,7 @@ async function findDueDate(assignmentText) {
     'The student pasted assignment details below.',
     'Extract the assignment title and a due date only when the pasted text clearly provides one.',
     'Today in the computer local calendar is ' + localDateIso() + '. Use it only to resolve an explicit relative date such as “tomorrow” or “Friday”; never guess a missing or ambiguous date.',
+    'A date without a year may be used only when it is still upcoming this calendar year; mark it medium confidence. If a yearless date has already passed this year, return dueDate null and confidence low so the student can add the year.',
     'Return JSON only in this exact shape:',
     '{"title":"short assignment title","dueDate":"YYYY-MM-DD or null","dateText":"the exact date words or empty string","confidence":"high, medium, or low"}',
     'If the date is unclear or absent, use dueDate null and confidence low.',
@@ -138,15 +148,20 @@ async function findDueDate(assignmentText) {
   ].join('\n'));
 
   const result = parseJsonObject(text);
-  const dueDate = typeof result.dueDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(result.dueDate)
+  const dateText = typeof result.dateText === 'string' ? result.dateText.trim() : '';
+  const today = localDateIso();
+  const hasExplicitYear = /\b\d{4}\b/.test(dateText);
+  const rawDueDate = typeof result.dueDate === 'string' && isValidIsoDate(result.dueDate)
     ? result.dueDate
     : null;
+  const dueDate = rawDueDate && (rawDueDate >= today || hasExplicitYear) ? rawDueDate : null;
+  const confidence = ['high', 'medium', 'low'].includes(result.confidence) ? result.confidence : 'low';
 
   return {
     title: typeof result.title === 'string' && result.title.trim() ? result.title.trim() : assignmentText.trim(),
     dueDate,
-    dateText: typeof result.dateText === 'string' ? result.dateText.trim() : '',
-    confidence: ['high', 'medium', 'low'].includes(result.confidence) ? result.confidence : 'low',
+    dateText,
+    confidence: dueDate ? (hasExplicitYear ? confidence : 'medium') : 'low',
   };
 }
 

@@ -31,7 +31,7 @@ The helper listens on port 3001. The AI key comes from getKey() in helper/keygen
 
 ## Check the MVP features in 2 steps each
 
-1. AI date extraction: Paste `Science project is due Friday, November 20` and tap `Find due date with AI`.
+1. AI date extraction: Paste `Science project is due Friday, December 4, 2026` and tap `Find due date with AI`.
 2. Confirm the date appears, then tap `Save assignment & reminder`.
 
 1. Phone reminder: Allow notifications when the phone asks and save an assignment due tomorrow after the day-before time.
