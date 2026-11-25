@@ -25,6 +25,7 @@ The helper listens on port 3001. The AI key comes from getKey() in helper/keygen
 - MVP 4: ask a question answered only from the saved assignments.
 - The AI helper sends the instructions from `BRIEF.md` with every OpenAI request and uses the `gpt-5.6-luna` model named here.
 - The app shows the date source, asks the student to confirm uncertain dates, and includes an incorrect-date report button.
+- Saved assignments can be deleted or have their due dates changed; saved reminders are cancelled or replaced with the change.
 - `expo-notifications` local notifications work in Expo Go; remote push notifications are not part of this version.
 - MindDo supplies a temporary AI key through getKey(), which keeps it cached until expiresAt and refreshes it once if OpenAI rejects it.
 - After each save point, push it to GitHub.

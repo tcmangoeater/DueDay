@@ -139,6 +139,9 @@ export default function App() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [reportedId, setReportedId] = useState('');
+  const [editingId, setEditingId] = useState('');
+  const [editingDueDate, setEditingDueDate] = useState('');
+  const [deleteId, setDeleteId] = useState('');
   const [thinking, setThinking] = useState('');
   const [isReady, setIsReady] = useState(false);
 
@@ -197,6 +200,17 @@ export default function App() {
       return { id, isDemo: reminderTime.isDemo, unavailable: false };
     } catch {
       return { id: null, isDemo: reminderTime.isDemo, unavailable: true };
+    }
+  }
+
+  async function cancelReminder(notificationId) {
+    if (Platform.OS === 'web' || !notificationId) return true;
+
+    try {
+      await Notifications.cancelScheduledNotificationAsync(notificationId);
+      return true;
+    } catch {
+      return false;
     }
   }
 
@@ -266,6 +280,92 @@ export default function App() {
         : reminder.isDemo
           ? 'Saved. A safe demo reminder is scheduled for about one minute from now.'
           : `Saved. A general reminder is planned for the day before ${formatDate(dueDate)}.`,
+    );
+    setThinking('');
+  }
+
+  function startEditingDueDate(item) {
+    setEditingId(item.id);
+    setEditingDueDate(item.dueDate);
+    setDeleteId('');
+    setError('');
+    setNotice('');
+  }
+
+  function cancelEditingDueDate() {
+    setEditingId('');
+    setEditingDueDate('');
+  }
+
+  async function handleUpdateDueDate(item) {
+    const dueDate = editingDueDate.trim();
+    const due = parseDate(dueDate);
+
+    if (!due) {
+      setError('Please use a real date in YYYY-MM-DD format.');
+      return;
+    }
+    if (due <= new Date()) {
+      setError('That due date has already passed. Use a future date.');
+      return;
+    }
+
+    setThinking('edit');
+    setError('');
+    setNotice('');
+    const reminder = await scheduleReminder(dueDate);
+
+    if (reminder.unavailable && item.notificationId) {
+      setError('I could not replace the old reminder, so the due date was not changed. Turn on notifications and try again.');
+      setThinking('');
+      return;
+    }
+
+    if (item.notificationId && !reminder.unavailable) {
+      const oldReminderCancelled = await cancelReminder(item.notificationId);
+      if (!oldReminderCancelled) {
+        await cancelReminder(reminder.id);
+        setError('I could not replace the old reminder, so the due date was not changed.');
+        setThinking('');
+        return;
+      }
+    }
+
+    setAssignments((current) => sortAssignments(current.map((assignment) => (
+      assignment.id === item.id
+        ? { ...assignment, dueDate, notificationId: reminder.id }
+        : assignment
+    ))));
+    cancelEditingDueDate();
+    setNotice(
+      reminder.unavailable
+        ? 'Due date changed. Turn on notifications to receive a new reminder.'
+        : reminder.isDemo
+          ? 'Due date changed. A safe demo reminder is scheduled for about one minute from now.'
+          : `Due date changed. A reminder is planned for the day before ${formatDate(dueDate)}.`,
+    );
+    setThinking('');
+  }
+
+  function requestDeleteAssignment(item) {
+    setDeleteId((current) => current === item.id ? '' : item.id);
+    setEditingId('');
+    setEditingDueDate('');
+    setError('');
+  }
+
+  async function handleDeleteAssignment(item) {
+    setThinking('delete');
+    setError('');
+    setNotice('');
+    const reminderCancelled = await cancelReminder(item.notificationId);
+    setAssignments((current) => current.filter((assignment) => assignment.id !== item.id));
+    setDeleteId('');
+    setReportedId((current) => current === item.id ? '' : current);
+    setNotice(
+      reminderCancelled
+        ? 'Assignment deleted.'
+        : 'Assignment deleted, but its old reminder could not be cancelled.',
     );
     setThinking('');
   }
@@ -430,6 +530,90 @@ export default function App() {
                 <Text style={styles.assignmentTitle}>{item.title}</Text>
                 <Text style={styles.assignmentSource}>Source: {item.source}</Text>
                 <Text style={styles.assignmentReminder}>General phone reminder planned</Text>
+                {editingId === item.id ? (
+                  <View style={styles.editDatePanel}>
+                    <Text style={styles.label}>NEW DUE DATE</Text>
+                    <TextInput
+                      accessibilityLabel="New due date"
+                      value={editingDueDate}
+                      onChangeText={setEditingDueDate}
+                      style={styles.input}
+                      keyboardType="numbers-and-punctuation"
+                      placeholder="YYYY-MM-DD"
+                      placeholderTextColor="#9AA1B2"
+                    />
+                    <View style={styles.actionRow}>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Save changed due date"
+                        disabled={Boolean(thinking)}
+                        onPress={() => handleUpdateDueDate(item)}
+                        style={({ pressed }) => [
+                          styles.smallPrimaryButton,
+                          thinking && styles.disabledSmallButton,
+                          pressed && !thinking && styles.pressedSmallPrimaryButton,
+                        ]}
+                      >
+                        <Text style={styles.smallPrimaryButtonText}>Save date</Text>
+                      </Pressable>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Cancel changing due date"
+                        disabled={Boolean(thinking)}
+                        onPress={cancelEditingDueDate}
+                        style={styles.smallSecondaryButton}
+                      >
+                        <Text style={styles.smallSecondaryButtonText}>Cancel</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.actionRow}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Change due date for ${item.title}`}
+                      disabled={Boolean(thinking)}
+                      onPress={() => startEditingDueDate(item)}
+                      style={styles.smallSecondaryButton}
+                    >
+                      <Text style={styles.smallSecondaryButtonText}>Change due date</Text>
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Delete ${item.title}`}
+                      disabled={Boolean(thinking)}
+                      onPress={() => requestDeleteAssignment(item)}
+                      style={styles.smallDeleteButton}
+                    >
+                      <Text style={styles.smallDeleteButtonText}>Delete</Text>
+                    </Pressable>
+                  </View>
+                )}
+                {deleteId === item.id ? (
+                  <View style={styles.deleteConfirmCard}>
+                    <Text style={styles.deleteConfirmText}>Delete this assignment and its reminder?</Text>
+                    <View style={styles.actionRow}>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Confirm deleting ${item.title}`}
+                        disabled={Boolean(thinking)}
+                        onPress={() => handleDeleteAssignment(item)}
+                        style={styles.smallDeleteButton}
+                      >
+                        <Text style={styles.smallDeleteButtonText}>Delete assignment</Text>
+                      </Pressable>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Keep assignment"
+                        disabled={Boolean(thinking)}
+                        onPress={() => setDeleteId('')}
+                        style={styles.smallSecondaryButton}
+                      >
+                        <Text style={styles.smallSecondaryButtonText}>Keep it</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                ) : null}
                 <Pressable
                   accessibilityRole="button"
                   onPress={() => setReportedId(item.id)}
@@ -544,6 +728,18 @@ const styles = StyleSheet.create({
   assignmentTitle: { color: '#1E2440', fontSize: 18, fontWeight: '800', lineHeight: 23, marginTop: 11 },
   assignmentSource: { color: '#7A8295', fontSize: 12, marginTop: 7 },
   assignmentReminder: { color: '#16765B', fontSize: 12, fontWeight: '700', marginTop: 9 },
+  actionRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 14 },
+  editDatePanel: { marginTop: 6 },
+  smallPrimaryButton: { alignItems: 'center', backgroundColor: '#5A52E8', borderRadius: 10, justifyContent: 'center', marginBottom: 8, marginRight: 8, minHeight: 42, paddingHorizontal: 14 },
+  smallPrimaryButtonText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' },
+  smallSecondaryButton: { alignItems: 'center', backgroundColor: '#ECEBFF', borderRadius: 10, justifyContent: 'center', marginBottom: 8, marginRight: 8, minHeight: 42, paddingHorizontal: 14 },
+  smallSecondaryButtonText: { color: '#4B44C7', fontSize: 13, fontWeight: '800' },
+  smallDeleteButton: { alignItems: 'center', backgroundColor: '#FFF1F0', borderColor: '#FFD4D0', borderRadius: 10, borderWidth: 1, justifyContent: 'center', marginBottom: 8, marginRight: 8, minHeight: 42, paddingHorizontal: 14 },
+  smallDeleteButtonText: { color: '#A8403A', fontSize: 13, fontWeight: '800' },
+  disabledSmallButton: { opacity: 0.55 },
+  pressedSmallPrimaryButton: { backgroundColor: '#4740C9' },
+  deleteConfirmCard: { backgroundColor: '#FFF8F7', borderColor: '#FFD4D0', borderRadius: 12, borderWidth: 1, marginTop: 12, padding: 12 },
+  deleteConfirmText: { color: '#814842', fontSize: 13, lineHeight: 19 },
   emptyCard: { backgroundColor: '#FFFFFF', borderColor: '#E5E7F0', borderRadius: 18, borderWidth: 1, padding: 18 },
   emptyTitle: { color: '#1E2440', fontSize: 15, fontWeight: '700' },
   emptyText: { color: '#7A8295', fontSize: 13, marginTop: 5 },
