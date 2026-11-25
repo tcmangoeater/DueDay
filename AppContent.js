@@ -195,6 +195,7 @@ export default function App() {
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DATE,
           date: reminderTime.date,
+          channelId: 'dueday-reminders',
         },
       });
       return { id, isDemo: reminderTime.isDemo, unavailable: false };
@@ -280,6 +281,31 @@ export default function App() {
         : reminder.isDemo
           ? 'Saved. A safe demo reminder is scheduled for about one minute from now.'
           : `Saved. A general reminder is planned for the day before ${formatDate(dueDate)}.`,
+    );
+    setThinking('');
+  }
+
+  async function handleEnableReminder(item) {
+    setThinking('reminder');
+    setError('');
+    setNotice('');
+    const reminder = await scheduleReminder(item.dueDate);
+
+    if (reminder.unavailable) {
+      setError('Notifications are not available yet. Allow DueDay notifications, then tap Set phone reminder again.');
+      setThinking('');
+      return;
+    }
+
+    setAssignments((current) => current.map((assignment) => (
+      assignment.id === item.id
+        ? { ...assignment, notificationId: reminder.id }
+        : assignment
+    )));
+    setNotice(
+      reminder.isDemo
+        ? 'A safe demo reminder is scheduled for about one minute from now.'
+        : `A general reminder is planned for the day before ${formatDate(item.dueDate)}.`,
     );
     setThinking('');
   }
@@ -529,7 +555,24 @@ export default function App() {
                 </View>
                 <Text style={styles.assignmentTitle}>{item.title}</Text>
                 <Text style={styles.assignmentSource}>Source: {item.source}</Text>
-                <Text style={styles.assignmentReminder}>General phone reminder planned</Text>
+                <Text style={[styles.assignmentReminder, !item.notificationId && styles.assignmentReminderMissing]}>
+                  {item.notificationId ? 'General phone reminder planned' : 'No phone reminder set yet'}
+                </Text>
+                {Platform.OS !== 'web' && !item.notificationId ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Set phone reminder for ${item.title}`}
+                    disabled={Boolean(thinking)}
+                    onPress={() => handleEnableReminder(item)}
+                    style={({ pressed }) => [
+                      styles.smallReminderButton,
+                      thinking && styles.disabledSmallButton,
+                      pressed && !thinking && styles.pressedReminderButton,
+                    ]}
+                  >
+                    <Text style={styles.smallReminderButtonText}>Set phone reminder</Text>
+                  </Pressable>
+                ) : null}
                 {editingId === item.id ? (
                   <View style={styles.editDatePanel}>
                     <Text style={styles.label}>NEW DUE DATE</Text>
@@ -728,6 +771,7 @@ const styles = StyleSheet.create({
   assignmentTitle: { color: '#1E2440', fontSize: 18, fontWeight: '800', lineHeight: 23, marginTop: 11 },
   assignmentSource: { color: '#7A8295', fontSize: 12, marginTop: 7 },
   assignmentReminder: { color: '#16765B', fontSize: 12, fontWeight: '700', marginTop: 9 },
+  assignmentReminderMissing: { color: '#A66A14' },
   actionRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 14 },
   editDatePanel: { marginTop: 6 },
   smallPrimaryButton: { alignItems: 'center', backgroundColor: '#5A52E8', borderRadius: 10, justifyContent: 'center', marginBottom: 8, marginRight: 8, minHeight: 42, paddingHorizontal: 14 },
@@ -736,8 +780,11 @@ const styles = StyleSheet.create({
   smallSecondaryButtonText: { color: '#4B44C7', fontSize: 13, fontWeight: '800' },
   smallDeleteButton: { alignItems: 'center', backgroundColor: '#FFF1F0', borderColor: '#FFD4D0', borderRadius: 10, borderWidth: 1, justifyContent: 'center', marginBottom: 8, marginRight: 8, minHeight: 42, paddingHorizontal: 14 },
   smallDeleteButtonText: { color: '#A8403A', fontSize: 13, fontWeight: '800' },
+  smallReminderButton: { alignItems: 'center', backgroundColor: '#E9F7F1', borderColor: '#C9EBDD', borderRadius: 10, borderWidth: 1, justifyContent: 'center', marginTop: 12, minHeight: 42, paddingHorizontal: 14 },
+  smallReminderButtonText: { color: '#16765B', fontSize: 13, fontWeight: '800' },
   disabledSmallButton: { opacity: 0.55 },
   pressedSmallPrimaryButton: { backgroundColor: '#4740C9' },
+  pressedReminderButton: { backgroundColor: '#D4F0E4' },
   deleteConfirmCard: { backgroundColor: '#FFF8F7', borderColor: '#FFD4D0', borderRadius: 12, borderWidth: 1, marginTop: 12, padding: 12 },
   deleteConfirmText: { color: '#814842', fontSize: 13, lineHeight: 19 },
   emptyCard: { backgroundColor: '#FFFFFF', borderColor: '#E5E7F0', borderRadius: 18, borderWidth: 1, padding: 18 },

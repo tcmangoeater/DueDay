@@ -35,7 +35,7 @@ The helper listens on port 3001. The AI key comes from getKey() in helper/keygen
 1. AI date extraction: Paste `Science project is due Friday, December 4, 2026` and tap `Find due date with AI`.
 2. Confirm the date appears, then tap `Save assignment & reminder`.
 
-1. Phone reminder: Allow notifications when the phone asks and save an assignment due tomorrow after the day-before time.
+1. Phone reminder: Allow notifications when the phone asks and save an assignment due tomorrow after the day-before time. If notifications were denied, tap `Set phone reminder` on the saved assignment after enabling them.
 2. Wait about one minute for the demo reminder, or use a far-future date to test the normal day-before schedule.
 
 1. Sorted list: Save two assignments with different due dates.
